@@ -56,24 +56,30 @@ exports.login = async (req, res, next) => {
     }
 
     try {
-        const user = await User.findOne({username, password});
-        if (!user) {
-            res.status(401).json({
-                message: "Login not successful",
-                error: "User not found"
-            })
-        } else {
-            //Comparing given password with hashed password
-            bcrypt.compare(password, user.password).then(function (result) {
-                result ? res.status(200).json({
-                        message: "Login successful",
-                        user,
-                    })
-                    : res.status(400).json({
-                        message: "Login successfull"
-                    })
-            })
-        }
+        bcrypt.compare(password, user.password).then(function (result) {
+            if(result) {
+                const maxAge = 3 *60 * 60;
+                const token = jwt.sign(
+                    {id: user._id, username, role: user.role},
+                    jwtSecret,
+                    {
+                        expiresIn: maxAge,
+                    }
+                );
+                res.cookie("jwt", token, {
+                    httpOnly: true,
+                    maxAge: maxAge * 1000,
+                });
+                res.status(201).json({
+                    message: "User succcessfully Logged in",
+                    user: user._id,
+                })
+            } else {
+                res.status(400).json({
+                    message: "Login not successful :( "
+                });
+            }
+        })
 
     } catch (e) {
         res.status(400).json({
