@@ -1,4 +1,9 @@
 const User = require("../model/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+const jttSecret = "f1c92e0813cdec69b1cb05a1b661b2e61c98c68d2dc1619af7cc2b1e0a5cc9d224d730";
+
 
 exports.register = async (req, res, next) => {
     const {username, password} = req.body;
@@ -9,20 +14,35 @@ exports.register = async (req, res, next) => {
         })
     }
 
-    try {
+    bcrypt.hash(password, 10).then(async (hash) => {
         await User.create({
             username,
-            password,
-        }).then(user => res.status(200).json({
-            message: "User successfully created",
-            user,
-        }))
-    } catch (err) {
-        res.status(401).json({
-            message: "User not successful created",
-            error: error.message,
+            password: hash,
+        }).then((user) => {
+            const maxAge = 3 * 60 * 60;
+            const token = jwt.sign(
+                {id: user._id, username, role: user.role},
+                jwtSecret,
+                {
+                    expiresIn: maxAge,
+                }
+            )
+            res.cookie("jwt", token, {
+                httpOnly: true,
+                maxAge: maxAge * 1000,
+            })
+            res.status(200).json({
+                message: "User successfully created",
+                user,
+            })
         })
-    }
+            .catch((error) =>
+                res.status(400).json({
+                    message: "User not successfully created",
+                    error: error.message,
+                })
+            )
+    })
 }
 
 exports.login = async (req, res, next) => {
@@ -43,9 +63,15 @@ exports.login = async (req, res, next) => {
                 error: "User not found"
             })
         } else {
-            res.status(200).json({
-                message: "Login successful",
-                user,
+            //Comparing given password with hashed password
+            bcrypt.compare(password, user.password).then(function (result) {
+                result ? res.status(200).json({
+                        message: "Login successful",
+                        user,
+                    })
+                    : res.status(400).json({
+                        message: "Login successfull"
+                    })
             })
         }
 
@@ -57,17 +83,17 @@ exports.login = async (req, res, next) => {
     }
 }
 
-exports.update = async (req,res,next) => {
+exports.update = async (req, res, next) => {
     const {role, id} = req.body;
 
     //First - Verifying if role and id is present
-    if(role && id) {
+    if (role && id) {
 
-        if(role === "admin") {
+        if (role === "admin") {
             try {
-                res.status(400).json({ message: "Role is Admin" })
-            }catch (error) {
-                res.status(400).json({message: "An error occurred", error: error.message   })
+                res.status(400).json({message: "Role is Admin"})
+            } catch (error) {
+                res.status(400).json({message: "An error occurred", error: error.message})
             }
 
         } else {
@@ -76,20 +102,20 @@ exports.update = async (req,res,next) => {
             })
         }
 
-        if(user.role !== "admin") {
+        if (user.role !== "admin") {
             user.role = role;
             user.save((err) => {
                 //MongoDB error checker
-                if(err) {
+                if (err) {
                     res
                         .status("400")
-                        .json({ message: "An error occurred", error: err.message})
+                        .json({message: "An error occurred", error: err.message})
                     process.exit(1);
                 }
-                res.status("201").json({ message: "Update successfull", user});
+                res.status("201").json({message: "Update successfull", user});
             });
         } else {
-            res.status(400).json({ message: "User is already  an Admin"})
+            res.status(400).json({message: "User is already  an Admin"})
         }
 
     } else {
@@ -99,12 +125,12 @@ exports.update = async (req,res,next) => {
     }
 }
 
-exports.deleteUser = async (req,res, next) => {
-    const { id } = req.body;
+exports.deleteUser = async (req, res, next) => {
+    const {id} = req.body;
     try {
         await User.findByIdAndDelete(id).then(
             user => {
-                res.status(201).json({ message: "User successfully deleted", user})
+                res.status(201).json({message: "User successfully deleted", user})
             }
         )
     } catch (error) {
