@@ -26,8 +26,17 @@ userRouter.get("/register", async (req,res) => {
 
         //creatae user in our database
         const user = await User.create({
-
+            first_name: first_name,
+            last_name: last_name,
+            email: email,
+            password: password,
         })
+
+        //create a token
+        const token = jwt.sign(
+            {user_id: user._id, email},
+            process.env.TOKEN_KEY
+        )
 
     } catch (err) {
 
