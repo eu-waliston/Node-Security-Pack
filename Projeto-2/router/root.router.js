@@ -2,6 +2,8 @@ const express = require("express");
 const User = require("../model/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const auth = require("../middleware/auth");
+const cors = require("cors")
 
 const userRouter = express.Router();
 
@@ -79,10 +81,14 @@ userRouter.post("/login", async (req, res) => {
       //user
       return res.status(200).json(user);
     }
-    return res.status(400).send("Invalid Credencials")
+    return res.status(400).send("Invalid Credencials");
   } catch (error) {
     console.log(error);
   }
+});
+
+userRouter.post("/welcome",cors(), auth, (req, res) => {
+  res.status(200).send("Welcome! 👐");
 });
 
 module.exports = userRouter;
