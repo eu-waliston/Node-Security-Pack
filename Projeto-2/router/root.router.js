@@ -6,10 +6,10 @@ const userRouter = express.Router();
 userRouter.get("/register", async (req,res) => {
     try {
         //get user input
-        const {firstame, lastName, email, password} = req.body;
+        const {firstname, lastName, email, password} = req.body;
 
         //validate user input
-        if(!(email && password && firstame && lastName)) {
+        if(!(email && password && firstname && lastName)) {
             res.status(400).send("All input is required");
         }
 
