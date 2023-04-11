@@ -1,8 +1,14 @@
 const express = require("express");
-const router = express.Router();
 
-router.get("/", (req,res) => {
-    res.status(200).send("<h1>Teste</h1>")
-})
+const MovieController = require("../controller/Movie.Controller");
 
-module.exports = router;
+const routes = express.Router();
+
+
+routes.get('/movies', MovieController.list)
+routes.get('/movies/:id', MovieController.show)
+routes.post('/movies', MovieController.create)
+routes.put('/movies/:id', MovieController.update)
+routes.get('/movies/:id', MovieController.delete)
+
+module.exports = routes;

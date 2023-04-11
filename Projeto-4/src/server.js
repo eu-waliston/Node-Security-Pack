@@ -1,5 +1,7 @@
 const express = require("express");
-const rootRouter = require("./routes/index.route");
+
+const routes = require("./routes/index.route");
+
 const cors = require("cors");
 require('dotenv').config();
 
@@ -12,7 +14,7 @@ api.use(cors());
 
 
 //Routes
-api.use('/', rootRouter);
+api.use(routes);
 
 
 api.listen(process.env.PORT, () => {
